@@ -46,7 +46,7 @@ export default function InventoryManagementSystem() {
         type: "",
         price: 0
     });
-    const [isAddingProduct, setIsAddingProduct] = useState(false);
+    const [isAddingAlarm, setIsAddingAlarm] = useState(false);
 
     const handleProductChange = (e, field) => {
         setEditingProduct({
@@ -141,71 +141,42 @@ export default function InventoryManagementSystem() {
                     <div className="flex justify-between items-center">
                         <button
                             className="bg-blue hover:bg-blue-700 text-black px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+                            onClick={() => setIsAddingAlarm(true)}
                         >
                             <Plus className="h-5 w-5" />
-                            Add Product
+                            Add Alarm
                         </button>
                     </div>
                 </header>
 
-                {isAddingProduct && (
+                {isAddingAlarm && (
                     <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-                        <h2 className="text-xl font-semibold mb-4">Add New Product</h2>
+                        <h2 className="text-xl font-semibold mb-4">Add new alarm</h2>
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Shelf</label>
-                                <select
-                                    className="w-full p-2 border border-gray-300 rounded-md"
-                                    value={newProduct.shelfId}
-                                    onChange={(e) => handleNewProductChange(e, 'shelfId')}
-                                >
-                                    <option value="">Select Shelf</option>
-                                    {inventory.map(shelf => (
-                                        <option key={shelf.shelfId} value={shelf.shelfId}>{shelf.location}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Product ID</label>
-                                <input
-                                    type="number"
-                                    className="w-full p-2 border border-gray-300 rounded-md"
-                                    value={newProduct.id}
-                                    onChange={(e) => handleNewProductChange(e, 'id')}
-                                    min="1"
-                                />
-                            </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Type</label>
                                 <input
-                                    type="text"
                                     className="w-full p-2 border border-gray-300 rounded-md"
-                                    value={newProduct.type}
-                                    onChange={(e) => handleNewProductChange(e, 'type')}
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Threshold Quantity</label>
                                 <input
                                     type="number"
                                     className="w-full p-2 border border-gray-300 rounded-md"
-                                    value={newProduct.price}
-                                    onChange={(e) => handleNewProductChange(e, 'price')}
                                     min="0"
-                                    step="0.01"
                                 />
                             </div>
                         </div>
                         <div className="mt-4 flex justify-end gap-2">
                             <button
                                 className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg transition-colors"
-                                onClick={() => setIsAddingProduct(false)}
+                                onClick={() => setIsAddingAlarm(false)}
                             >
                                 Cancel
                             </button>
                             <button
                                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-                                onClick={addNewProduct}
                             >
                                 <Save className="h-5 w-5" />
                                 Save Product
