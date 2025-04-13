@@ -1,7 +1,7 @@
 import './App.css'
 
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Package, Trash2, Edit, Save, Plus, Search } from 'lucide-react';
 
 export default function InventoryManagementSystem() {
@@ -37,7 +37,24 @@ export default function InventoryManagementSystem() {
         }
     ];
 
-    const [inventory, setInventory] = useState(initialInventory);
+    useEffect(() => {
+        setInterval(async () => {
+            if (!document.BASE_URL) {
+                console.error("document.BASE_URL is not set");
+                return;
+            }
+            try {
+                const resp = await fetch(`${document.BASE_URL}/shelves`, { method: 'GET', headers: { "ngrok-skip-browser-warning": "1" } });
+                const data = await resp.json();
+                console.log(data)
+                setInventory(data.shelves);
+            } catch (e) {
+                console.error(e);
+            }
+        }, 1000);
+    }, []);
+
+    const [inventory, setInventory] = useState();
     const [editingProduct, setEditingProduct] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [newProduct, setNewProduct] = useState({
@@ -185,56 +202,60 @@ export default function InventoryManagementSystem() {
                     </div>
                 )}
 
-                <div className="space-y-6">
-                    {inventory.map(shelf => (
-                        <div key={shelf.shelfId} className="bg-white rounded-lg shadow-md overflow-hidden">
-                            <div className="bg-blue-600 text-white px-6 py-4 flex items-center">
-                                <Package className="h-6 w-6 mr-2" />
-                                <h2 className="text-xl font-semibold">{shelf.location}</h2>
-                            </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Product ID
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Type
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Price
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-200">
-                                        {shelf.products.map(product => (
-                                            <tr key={product.productId}>
-                                                <>
-                                                    <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
-                                                        {product.productId}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                                                        {product.type}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                                                        ${product.price.toFixed(2)}
-                                                    </td>
-                                                </>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                {inventory && 
+                    <>
+                        <div className="space-y-6">
+                            {inventory.map(shelf => (
+                                <div key={shelf.shelfId} className="bg-white rounded-lg shadow-md overflow-hidden">
+                                    <div className="bg-blue-600 text-white px-6 py-4 flex items-center">
+                                        <Package className="h-6 w-6 mr-2" />
+                                        <h2 className="text-xl font-semibold">{`${shelf.location} (${shelf.shelfId})`}</h2>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full">
+                                            <thead className="bg-gray-50">
+                                                <tr>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Product ID
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Type
+                                                    </th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Price
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-200">
+                                                {shelf.products.map(product => (
+                                                    <tr key={product.productId}>
+                                                        <>
+                                                            <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
+                                                                {product.productId}
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                                                                {product.type}
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                                                                ${product.price.toFixed(2)}
+                                                            </td>
+                                                        </>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    ))}
-                </div>
+                        {inventory.length === 0 && (
+                            <div className="bg-white rounded-lg shadow-md p-6 text-center">
+                                <p className="text-lg text-gray-600">No products found.</p>
+                            </div>
+                        )}
+                    </>
+                }
 
-                {inventory.length === 0 && (
-                    <div className="bg-white rounded-lg shadow-md p-6 text-center">
-                        <p className="text-lg text-gray-600">No products found. Try a different search term or add new products.</p>
-                    </div>
-                )}
             </div>
         </div>
     );
