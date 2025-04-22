@@ -6,6 +6,9 @@ from sqlmodel import Field, Session, SQLModel, create_engine, select
 from sqlmodel import SQLModel, Field, Relationship
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
+
+
 
 # Pydantic(requests and response) models
 class ShelfBase(SQLModel):
@@ -59,9 +62,10 @@ def generate_default_data():
         # Check if products exist, if not, create default products that id is linked to actual tag id
         if not session.exec(select(Product)).first():
             default_products = [
-                Product(productId="P1", type="Coke", price=1.99),
-                Product(productId="P2", type="Pepsi", price=1.89),
-                Product(productId="P3", type="Sprite", price=1.79),
+                Product(productId="938889773938", type="Coke", price=1.99),
+                Product(productId="313820185471", type="Pepsi", price=1.89),
+                Product(productId="769138426781", type="Sprite", price=1.79),
+                Product(productId="533585199979", type="water", price=0.79),
             ]
             session.add_all(default_products)
             session.commit()
@@ -75,6 +79,16 @@ def get_session():
 SessionDep = Annotated[Session, Depends(get_session)]
 
 app = FastAPI()
+
+# Enable CORS for all origins
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],         # Allow all origins
+    allow_credentials=True,
+    allow_methods=["*"],         # Allow all methods (GET, POST, etc.)
+    allow_headers=["*"],         # Allow all headers
+)
+
 
 @app.on_event("startup")
 def on_startup():
@@ -98,7 +112,7 @@ def register_shelf(shelf: ShelfRegister, session: SessionDep) -> Shelf:
 
 @app.patch("/shelves/{shelf_id}")
 def add_products_to_shelf(shelf_id: str, product: ProductAdd, session: SessionDep):
-
+    print(product)
     # Get shelf
     shelf = session.exec(select(Shelf).where(Shelf.shelfId == shelf_id)).first()
     
@@ -168,3 +182,20 @@ def restart_shelf(shelf_id: str, session: SessionDep):
     session.commit()  # Commit the changes to the database
     
     return {"status": f"completed"}
+
+
+
+@app.delete("/shelves/")
+def delete_all_shelves(session: SessionDep):
+    # Unlink all products from shelves
+    products = session.exec(select(Product).where(Product.shelfId.is_not(None))).all()
+    for product in products:
+        product.shelfId = None
+
+    # Delete all shelves
+    shelves = session.exec(select(Shelf)).all()
+    for shelf in shelves:
+        session.delete(shelf)
+
+    session.commit()
+    return {"message": "success"}
