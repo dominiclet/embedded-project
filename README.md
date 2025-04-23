@@ -43,13 +43,18 @@ A. You may setup RaspberryPi with Head or Headless. In this project, the headles
         <username> is username that is set during installation of the OS.
 
 B. Once setup of RPi is done, set up the MFRC522 RFID reader.
+
     1. Connect the reader accordingly:
     https://pimylifeup.com/raspberry-pi-rfid-rc522/
+    
     2. Clone MFRC522-Python and install accordignly:
     > git clone https://github.com/pimylifeup/MFRC522-python.git
+
     3. Update backend/inventory.py
     > BASE_URL = <BACKEND_BASE_URL>
     where <BACKEND_BASE_URL> is the URL of the backend server. Ensure that the backend server is accessible by your computer.
+
     4. In your desired folder or in the backend folder, run inventory.py
     > python3 inventory.py
+    
     5. Tap the RFID card to check if the reader is able to read the UID of the card.
