@@ -9,6 +9,7 @@ from fastapi import HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
 
+from fastapi.middleware.cors import CORSMiddleware
 
 # Pydantic(requests and response) models
 class ShelfBase(SQLModel):
@@ -62,10 +63,10 @@ def generate_default_data():
         # Check if products exist, if not, create default products that id is linked to actual tag id
         if not session.exec(select(Product)).first():
             default_products = [
-                Product(productId="938889773938", type="Coke", price=1.99),
-                Product(productId="313820185471", type="Pepsi", price=1.89),
-                Product(productId="769138426781", type="Sprite", price=1.79),
-                Product(productId="533585199979", type="water", price=0.79),
+                Product(productId="533585199979", type="Coke", price=1.99),
+                Product(productId="769138426781", type="Coke", price=1.99),
+                Product(productId="938889773938", type="Pepsi", price=1.89),
+                Product(productId="108582283387", type="Sprite", price=1.79),
             ]
             session.add_all(default_products)
             session.commit()
@@ -80,13 +81,19 @@ SessionDep = Annotated[Session, Depends(get_session)]
 
 app = FastAPI()
 
-# Enable CORS for all origins
+@app.get("/")
+def read_root():
+    return {"message": "CORS is enabled for all domains."}
+
+
+
+# Allow all domains
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],         # Allow all origins
+    allow_origins=["*"],  # Allow all origins
     allow_credentials=True,
-    allow_methods=["*"],         # Allow all methods (GET, POST, etc.)
-    allow_headers=["*"],         # Allow all headers
+    allow_methods=["*"],  # Allow all methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allow all headers
 )
 
 
@@ -185,17 +192,65 @@ def restart_shelf(shelf_id: str, session: SessionDep):
 
 
 
-@app.delete("/shelves/")
-def delete_all_shelves(session: SessionDep):
-    # Unlink all products from shelves
-    products = session.exec(select(Product).where(Product.shelfId.is_not(None))).all()
+@app.delete("/shelves/{shelf_id}")
+def delete_shelf_and_unlink_products(shelf_id: str, session: SessionDep):
+    # Get shelf ID
+    shelf = session.exec(select(Shelf).where(Shelf.shelfId == shelf_id)).first()
+
+    if not shelf:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shelf not found")
+    
+    # Fetch all products associated with the shelf
+    products = session.exec(select(Product).where(Product.shelfId == shelf_id)).all()
+
+    # Set to None
     for product in products:
         product.shelfId = None
 
-    # Delete all shelves
-    shelves = session.exec(select(Shelf)).all()
-    for shelf in shelves:
-        session.delete(shelf)
+    # Delete actual shelf
+    session.delete(shelf)
 
     session.commit()
-    return {"message": "success"}
+    
+    return {"message": "shelf deleted"}
+
+@app.post("/products/")
+def create_product(product: ProductRead, session: SessionDep):
+    existing_product = session.exec(
+        select(Product).where(Product.productId == product.productId)
+    ).first()
+
+    if existing_product:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Product with this ID already exists"
+        )
+
+    new_product = Product(
+        productId=product.productId,
+        type=product.type,
+        price=product.price,
+    )
+    session.add(new_product)
+    session.commit()
+    session.refresh(new_product)
+    return {"message": "Product created"}
+
+
+@app.delete("/products/{product_id}")
+def delete_product(product_id: str, session: SessionDep):
+    product = session.exec(
+        select(Product).where(Product.productId == product_id)
+    ).first()
+
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found"
+        )
+
+    product.shelfId = None
+    session.delete(product)
+    session.commit()
+
+    return {"message": "Product deleted"}
